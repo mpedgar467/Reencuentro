@@ -584,37 +584,6 @@
 </div>
 
 <script>
-/* ============ CONFIGURACIÓN DEL BUZÓN (paso único, oculto) ============ */
-const SETUP_MODE = new URLSearchParams(location.search).get('setup');
-if(SETUP_MODE === 'buzon'){
-  document.body.innerHTML = `
-    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:#150F27; color:#F7F0E3; font-family:sans-serif; text-align:center;">
-      <div id="setupBox">Creando el buzón, un momento…</div>
-    </div>`;
-  (async ()=>{
-    const box = document.getElementById('setupBox');
-    try {
-      const res = await fetch('https://jsonblob.com/api/jsonBlob', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-        body: JSON.stringify({ mensajes: [] })
-      });
-      const loc = res.headers.get('Location') || res.headers.get('location');
-      const id = loc ? loc.split('/').filter(Boolean).pop() : null;
-      if(id){
-        box.innerHTML = `✅ Buzón creado.<br><br>Copia este código y pégaselo a Claude:<br><br>
-          <code style="font-size:1.4rem; background:#211A3B; padding:10px 18px; border-radius:10px; display:inline-block; margin-top:8px;">${id}</code>`;
-      } else {
-        box.innerHTML = 'No se pudo leer el código del buzón. Abre la consola del navegador (F12) y copia lo que veas ahí.';
-        console.log('Respuesta sin Location header:', res.status, [...res.headers.entries()]);
-      }
-    } catch(e){
-      box.innerHTML = 'Error creando el buzón: ' + e.message + '<br>Prueba de nuevo o dímelo para buscar otra solución.';
-    }
-  })();
-  throw new Error('setup-mode: pantalla de configuración del buzón, no se carga la app normal');
-}
-
 /* ============ CANDADO ============ */
 const CODIGO = '301125';
 let intento = '';
@@ -840,13 +809,16 @@ function closeCard(){ overlay.classList.remove('open'); }
 
 const ICONS = { letter:'💌', photo:'📷', video:'🎬', game:'✈️', cartitas:'🤍', buzon:'📮' };
 
-/* ============ BUZÓN: almacén compartido ============ */
-const BUZON_BLOB_ID = 'PENDIENTE'; // Mario: sustituye esto por el código de la pantalla ?setup=buzon
-function buzonUrl(){ return `https://jsonblob.com/api/jsonBlob/${BUZON_BLOB_ID}`; }
+/* ============ BUZÓN: almacén compartido (kvdb.io, ya activado) ============ */
+const BUZON_BUCKET = '6qtVFJWgeLnC5QbUfaZEyt';
+function buzonUrl(){ return `https://kvdb.io/${BUZON_BUCKET}/mensajes`; }
 async function buzonLeerTodo(){
   const res = await fetch(buzonUrl());
+  if(res.status === 404) return { mensajes: [] };
   if(!res.ok) throw new Error('No se pudo leer el buzón');
-  return await res.json();
+  const texto = await res.text();
+  if(!texto) return { mensajes: [] };
+  return JSON.parse(texto);
 }
 async function buzonGuardarMensaje(texto){
   let actual = { mensajes: [] };
@@ -854,7 +826,7 @@ async function buzonGuardarMensaje(texto){
   const mensajes = Array.isArray(actual.mensajes) ? actual.mensajes.slice() : [];
   mensajes.push({ texto, fecha: new Date().toISOString() });
   const res = await fetch(buzonUrl(), {
-    method:'PUT',
+    method:'POST',
     headers:{ 'Content-Type':'application/json' },
     body: JSON.stringify({ mensajes })
   });
