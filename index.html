@@ -417,6 +417,55 @@
   .buzon-inbox-fecha{font-size:0.72rem; color:var(--niebla); margin-bottom:6px;}
   .buzon-inbox-texto{font-size:0.95rem; line-height:1.55; white-space:pre-wrap;}
 
+  /* ============ HITO: cuenta atrás dramática (día 5) ============ */
+  .hito-wrap{position:relative; text-align:center; padding-top:6px;}
+  .hito-numero-wrap{position:relative; z-index:1; margin-bottom:14px;}
+  .hito-halo{
+    position:absolute; left:50%; top:50%; width:210px; height:210px;
+    transform:translate(-50%,-50%); border-radius:50%; z-index:-1;
+    background:radial-gradient(circle, rgba(227,181,119,0.28) 0%, rgba(236,131,152,0.14) 45%, transparent 72%);
+    animation:haloPulso 3.4s ease-in-out infinite;
+  }
+  @keyframes haloPulso{
+    0%,100%{transform:translate(-50%,-50%) scale(1); opacity:0.75;}
+    50%{transform:translate(-50%,-50%) scale(1.18); opacity:1;}
+  }
+  .hito-numero{
+    display:block; font-family:'Fraunces',serif; font-style:italic; font-weight:600;
+    font-size:5.6rem; line-height:1; color:var(--vela); position:relative;
+    text-shadow:0 0 22px rgba(227,181,119,0.45);
+    transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .hito-numero.landed{animation:hitoLanded 1.6s ease-in-out infinite;}
+  @keyframes hitoLanded{
+    0%,100%{transform:scale(1); text-shadow:0 0 22px rgba(227,181,119,0.45);}
+    50%{transform:scale(1.06); text-shadow:0 0 40px rgba(236,131,152,0.6);}
+  }
+  .hito-etiqueta{display:block; margin-top:4px; font-family:'Manrope',sans-serif; font-size:0.9rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--niebla); position:relative;}
+  .hito-progreso{position:relative; z-index:1; display:flex; justify-content:center; flex-wrap:wrap; gap:5px; margin:0 auto 18px; max-width:280px;}
+  .hito-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--tinta-borde);
+    transition:background 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+    transition-delay:calc(var(--i) * 0.025s);
+  }
+  .hito-dot.filled{background:var(--vela); box-shadow:0 0 6px rgba(227,181,119,0.7); transform:scale(1.15);}
+  .hito-dot.final{
+    width:auto; height:auto; background:none; font-size:0.85rem; color:var(--brasa);
+    display:inline-flex; align-items:center; justify-content:center; box-shadow:none;
+  }
+  .hito-divisor{position:relative; z-index:1; margin:4px 0 18px; color:var(--niebla); opacity:0.6; font-size:0.9rem;}
+  .hito-carta{
+    position:relative; z-index:1; margin:0 auto; padding:20px 18px; max-width:340px;
+    border:1.5px dashed var(--linea); border-radius:16px; background:rgba(247,240,227,0.03);
+  }
+  .hito-texto{position:relative; z-index:1;}
+  .hito-cancion{
+    position:relative; z-index:1; margin-top:22px; opacity:0; transform:translateY(10px);
+    transition:opacity 0.6s ease, transform 0.6s ease;
+  }
+  .hito-cancion.show{opacity:1; transform:translateY(0);}
+  .hito-spotify{border-radius:12px; display:block;}
+
   /* ============ ATERRIZAJE ============ */
   .landing{position:relative; padding:50px 0 30px; text-align:center;}
   .landing-halo{
@@ -672,7 +721,12 @@ const DIAS = [
       guardado:'Guardado. Lo leeré en cuanto pueda ♡',
       error:'No se pudo guardar — revisa tu conexión e inténtalo otra vez.'
   } },
-  { tipo:'photo', titulo:'Mi favorita', src:'assets/dia5.jpg', caption:'Escribe aquí el recuerdo de esta foto.' },
+  { tipo:'hito', titulo:'Ya solo quedan dos semanas', hito:{
+      numero:'14',
+      etiqueta:'días',
+      texto:'Amor,\n\nYa solo quedan 14 días. Lo he mirado como diez veces en el calendario y todavía no me lo creo.\n\nLo que más ganas tengo es de las tonterías: de reírnos sin motivo, de hablar tumbados sin hacer nada, de quedarnos dormidos viendo una peli sin llegar a terminarla nunca.\n\nNo sé escribir esto sin ponerme cursi así que ya está, lo digo tal cual: te echo muchísimo de menos, y cada día que tacho es un día más cerca de abrazarte de verdad.\n\nYa se empieza a ver el final de esto.\n\nTe quiero.',
+      spotify:'0Z2nO4UP3AROIXIBmpQkn0'
+  } },
   { tipo:'letter', titulo:'A mitad de camino de la primera semana', texto:'Escribe aquí una carta corta.' },
   { tipo:'video', titulo:'Un momento nuestro', src:'assets/dia7.mp4', caption:'Escribe aquí qué es este vídeo.' },
   { tipo:'photo', titulo:'Una semana', src:'assets/dia8.jpg', caption:'Escribe aquí el recuerdo de esta foto.' },
@@ -807,7 +861,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeCard(); })
 
 function closeCard(){ overlay.classList.remove('open'); }
 
-const ICONS = { letter:'💌', photo:'📷', video:'🎬', game:'✈️', cartitas:'🤍', buzon:'📮' };
+const ICONS = { letter:'💌', photo:'📷', video:'🎬', game:'✈️', cartitas:'🤍', buzon:'📮', hito:'🗓️' };
 
 /* ============ BUZÓN: almacén compartido (kvdb.io, ya activado) ============ */
 const BUZON_BUCKET = '6qtVFJWgeLnC5QbUfaZEyt';
@@ -1250,6 +1304,9 @@ function openDay(dia, num, date){
     } else if(dia.tipo === 'buzon'){
       revealEl.classList.add('show');
       startBuzon(revealBody, dia);
+    } else if(dia.tipo === 'hito'){
+      revealEl.classList.add('show');
+      startHito(revealBody, dia, num);
     } else {
       revealBody.appendChild(mediaBlock(dia.tipo, dia.src, dia.caption));
       revealEl.classList.add('show');
@@ -1377,6 +1434,63 @@ function openBuzonInbox(){
     renderBuzonLoading();
     buzonLeerTodo().then(renderBuzonList).catch(renderBuzonError);
   });
+}
+
+function startHito(container, dia, num){
+  const cfg = dia.hito;
+  const totalDias = DIAS.length + 1;
+  const wrap = document.createElement('div');
+  wrap.className = 'hito-wrap';
+  wrap.innerHTML = `
+    <div class="hito-numero-wrap">
+      <span class="hito-halo"></span>
+      <span class="hito-numero" id="hitoNumero">0</span>
+      <span class="hito-etiqueta">${cfg.etiqueta}</span>
+    </div>
+    <div class="hito-progreso" id="hitoProgreso"></div>
+    <div class="hito-divisor"><span>✦</span></div>
+    <div class="hito-carta">
+      <p class="letter-text hito-texto" id="hitoTexto"></p>
+    </div>
+    ${cfg.spotify ? `
+      <div class="hito-cancion" id="hitoCancion">
+        <iframe class="hito-spotify" src="https://open.spotify.com/embed/track/${cfg.spotify}?utm_source=generator" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>` : ''}
+  `;
+  container.appendChild(wrap);
+  iniciarChispasAmbiente(wrap);
+
+  const progresoEl = wrap.querySelector('#hitoProgreso');
+  for(let i=1; i<=totalDias; i++){
+    const dot = document.createElement('span');
+    dot.className = 'hito-dot' + (i <= num ? ' filled' : '') + (i === totalDias ? ' final' : '');
+    dot.style.setProperty('--i', i);
+    if(i === totalDias) dot.textContent = '★';
+    progresoEl.appendChild(dot);
+  }
+
+  const numeroEl = wrap.querySelector('#hitoNumero');
+  const textoEl = wrap.querySelector('#hitoTexto');
+  const cancionEl = wrap.querySelector('#hitoCancion');
+  const target = parseInt(cfg.numero, 10) || 0;
+  let current = 0;
+  const stepTime = Math.max(45, 650 / Math.max(target,1));
+  const timer = setInterval(()=>{
+    current++;
+    if(current >= target){
+      clearInterval(timer);
+      numeroEl.textContent = cfg.numero;
+      numeroEl.classList.add('landed');
+      confettiBurst(numeroEl, '#E3B577', 20, true);
+      sonarGranFinal();
+      setTimeout(()=>{
+        typewrite(textoEl, cfg.texto);
+        if(cancionEl) cancionEl.classList.add('show');
+      }, 350);
+    } else {
+      numeroEl.textContent = current;
+    }
+  }, stepTime);
 }
 
 function openFinal(){
